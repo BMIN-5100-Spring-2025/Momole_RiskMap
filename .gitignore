@@ -11,3 +11,4 @@ venv/
 
 # MacOS
 .DS_Store
+.Rproj.user
