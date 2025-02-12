@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.txt
+    ports:
+      - "8000:8000"
+    restart: always
+    environment:
+      - INPUT_DIR=/data/input
+      - OUTPUT_DIR=/data/output
+    volumes:
+      - ./data/input:/data/input:ro
+      - ./data/output:/data/output
+    networks:
+      - app-network
+    
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.txt
+    ports:
+      - "3000:3000"
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    environment:
+      - REACT_APP_BACKEND_URL=http://backend:8000
+
+networks:
+  app-network:
+    driver: bridge

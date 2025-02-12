@@ -1,6 +1,9 @@
 import csv
 import glob
 import os
+from flask import Flask
+
+app = Flask(__name__)
 
 def multiply_by_two(x):
     return int(x) * 2
@@ -32,6 +35,7 @@ def multiply_csvs(input_directory, output_directory):
         write_csv(output_file, rows)
 
 if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000, debug=True)
     base_directory = os.path.dirname(os.path.dirname(__file__))
 
     input_directory = os.getenv('INPUT_DIR', os.path.join(base_directory, 'data/input/'))
