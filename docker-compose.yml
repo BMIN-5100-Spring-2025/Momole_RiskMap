@@ -1,30 +1,15 @@
 version: '3.8'
 
 services:
-  backend:
+  prs-app:
+    image: prs-template:0.0.1
     build:
-      context: ./backend  
+      context: .
       dockerfile: Dockerfile.txt
-    ports:
-      - "8000:8000"
+    environment:
+      - INPUT_DIR=./data/input
+      - OUTPUT_DIR=./data/output
     volumes:
-      - ./backend/app:/app  
-    networks:
-      - app-network
-    restart: always  
-
-  frontend:
-    build:
-      context: ./frontend  
-      dockerfile: Dockerfile.txt
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-    networks:
-      - app-network
+      - ./data/input:/data/input:ro
+      - ./data/output:/data/output  
     restart: always
-
-networks:
-  app-network:
-    driver: bridge
