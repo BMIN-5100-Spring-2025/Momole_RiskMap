@@ -49,3 +49,15 @@ venv/
 # MacOS
 .DS_Store
 .Rproj.user
+
+# Large binary files
+*.msi
+*.zip
+*.exe
+deployment/*.zip
+deployment/*/*.zip
+
+# Vue.js
+node_modules/
+dist/
+.DS_Store

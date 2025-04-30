@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import geopandas as gpd
 
 # Set input and output folders
-INPUT_FOLDER = "input"
-OUTPUT_FOLDER = "output"
+INPUT_FOLDER = "/data/input"
+OUTPUT_FOLDER = "/data/output"
 
 # Ensure output directory exists
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
