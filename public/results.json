@@ -1,0 +1,24 @@
+{
+  "patient_id": "P001",
+  "analysis_date": "2024-04-30",
+  "risk_factors": [
+    {
+      "gene": "BRCA1",
+      "variant": "c.181T>G",
+      "risk_level": "High",
+      "confidence": 0.95
+    },
+    {
+      "gene": "TP53",
+      "variant": "c.524G>A",
+      "risk_level": "Medium",
+      "confidence": 0.85
+    }
+  ],
+  "summary": {
+    "total_risk_factors": 2,
+    "high_risk_count": 1,
+    "medium_risk_count": 1,
+    "low_risk_count": 0
+  }
+} 

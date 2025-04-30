@@ -3,12 +3,21 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import geopandas as gpd
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from datetime import datetime
 
-# Set input and output folders
-INPUT_FOLDER = "/data/input"
-OUTPUT_FOLDER = "/data/output"
+# Initialize Flask app
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
-# Ensure output directory exists
+# Set input and output folders relative to the script location
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+INPUT_FOLDER = os.path.join(SCRIPT_DIR, "input")
+OUTPUT_FOLDER = os.path.join(SCRIPT_DIR, "output")
+
+# Ensure input and output directories exist
+os.makedirs(INPUT_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # Expected column mappings (now using Gene Set instead of SNP)
@@ -19,6 +28,8 @@ COLUMN_MAPPINGS = {
 
 def find_latest_file(directory, extensions):
     """Find the latest file in a directory with the given extension."""
+    if not os.path.exists(directory):
+        return None
     files = [f for f in os.listdir(directory) if f.endswith(tuple(extensions))]
     if not files:
         return None
@@ -97,7 +108,6 @@ def generate_risk_map(prs_results):
     # Merge with world map
     world = world.merge(risk_data, left_on="ADMIN", right_on="Country", how="left")
 
-
     # Plot the risk map
     fig, ax = plt.subplots(figsize=(12, 6))
     world.plot(column="PRS_Score", cmap="Reds", linewidth=0.8, edgecolor="black", legend=True, ax=ax)
@@ -106,13 +116,65 @@ def generate_risk_map(prs_results):
     plt.close()
     print(f"🗺️ PRS risk map saved as {OUTPUT_FOLDER}/prs_risk_map.png")
 
-def main():
-    """Main function to process PRS calculation for gene-based GWAS data and generate visualizations."""
+@app.route('/api/risk-analysis', methods=['GET'])
+def get_risk_analysis():
+    """API endpoint to get risk analysis results."""
+    try:
+        # Read the latest results
+        results_file = os.path.join(OUTPUT_FOLDER, "gene_prs_results.json")
+        if not os.path.exists(results_file):
+            return jsonify({"error": "No analysis results available"}), 404
+
+        # Read and process the results
+        prs_results = pd.read_json(results_file)
+        
+        # Convert PRS scores to risk levels
+        def get_risk_level(score):
+            if score >= 0.7:
+                return "High"
+            elif score >= 0.4:
+                return "Medium"
+            return "Low"
+
+        # Generate risk factors
+        risk_factors = []
+        for _, row in prs_results.iterrows():
+            risk_factors.append({
+                "gene": row["Gene_Set"],
+                "variant": "N/A",  # Placeholder as we don't have variant data
+                "risk_level": get_risk_level(row["PRS_Score"]),
+                "confidence": 0.95  # Placeholder confidence score
+            })
+
+        # Calculate summary statistics
+        risk_levels = [factor["risk_level"] for factor in risk_factors]
+        summary = {
+            "total_risk_factors": len(risk_factors),
+            "high_risk_count": risk_levels.count("High"),
+            "medium_risk_count": risk_levels.count("Medium"),
+            "low_risk_count": risk_levels.count("Low")
+        }
+
+        # Prepare response
+        response = {
+            "patient_id": "P001",  # Placeholder patient ID
+            "analysis_date": datetime.now().strftime("%Y-%m-%d"),
+            "risk_factors": risk_factors,
+            "summary": summary
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def process_gwas_data():
+    """Process GWAS data and generate results."""
     gwas_file = find_latest_file(INPUT_FOLDER, [".tsv", ".csv"])
 
     if not gwas_file:
         print("❌ Missing GWAS file in 'input/' folder.")
-        return
+        return None
 
     try:
         prs_results = calculate_gene_based_prs(gwas_file)
@@ -130,8 +192,16 @@ def main():
         plot_prs_distribution(prs_results)
         generate_risk_map(prs_results)
 
+        return prs_results
+
     except Exception as e:
         print(f"❌ Error: {str(e)}")
+        return None
 
 if __name__ == "__main__":
-    main()
+    # Process initial GWAS data
+    process_gwas_data()
+    
+    # Start Flask server
+    print("🚀 Starting Flask server...")
+    app.run(host='0.0.0.0', port=5000, debug=True)
